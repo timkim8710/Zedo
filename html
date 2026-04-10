@@ -3,39 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zedo AI | Your Intelligent Notebook</title>
+    <title>Zedo AI | Smart Notes</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
+    <div class="app-wrapper">
         <aside class="sidebar">
-            <div class="logo">
+            <div class="brand">
                 <h1>Zedo<span>.ai</span></h1>
             </div>
-            
-            <div class="import-section">
-                <h3>Import Note</h3>
-                <label class="custom-file-upload">
-                    <input type="file" id="fileInput" accept=".txt" />
-                    Choose .txt File
+
+            <div class="upload-box">
+                <p>Import Knowledge</p>
+                <label for="fileInput" class="upload-btn">
+                    <span>+ Upload .txt</span>
+                    <input type="file" id="fileInput" accept=".txt">
                 </label>
-                <p id="uploadStatus"></p>
             </div>
 
-            <div class="notes-list-container">
-                <h3>My Knowledge Base</h3>
-                <ul id="notesList"></ul>
+            <div class="library">
+                <h3>Learned Notes</h3>
+                <ul id="notesList">
+                    </ul>
             </div>
         </aside>
 
-        <main class="chat-area">
+        <main class="chat-container">
+            <header class="chat-header">
+                <h2>AI Intelligence</h2>
+                <div class="status-dot"></div>
+            </header>
+
             <div id="chatDisplay" class="chat-display">
-                <div class="message system">Welcome to Zedo. Upload a note and ask me anything!</div>
+                <div class="message system">Zedo is ready. Upload your notes to begin.</div>
             </div>
 
-            <div class="input-container">
-                <input type="text" id="userInput" placeholder="Ask Zedo about your notes..." />
-                <button id="sendBtn">Ask</button>
+            <div class="chat-input-area">
+                <input type="text" id="userInput" placeholder="Ask Zedo about your notes..." autocomplete="off">
+                <button id="sendBtn">
+                    <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                </button>
             </div>
         </main>
     </div>
