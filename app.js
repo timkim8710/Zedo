@@ -80,8 +80,17 @@ sendBtn.addEventListener('click', async () => {
 function appendMessage(sender, text) {
     const div = document.createElement('div');
     div.className = `msg ${sender}`;
-    div.innerText = text;
+    
+    // For Gemini style, we use an icon or name
+    const label = sender === 'user' ? '<b>You</b><br>' : '<b>Zedo</b><br>';
+    div.innerHTML = label + text;
+    
     chatDisplay.appendChild(div);
+    
+    // Hide welcome message after first chat
+    const welcome = document.querySelector('.welcome-msg');
+    if (welcome) welcome.style.display = 'none';
+    
     chatDisplay.scrollTop = chatDisplay.scrollHeight;
     return div;
 }
