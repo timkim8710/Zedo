@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 1. YOUR FIREBASE CONFIG
+// 1. Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyDTRgfKgdma39T7SWkMelAuFWsBv6n_Zr8",
     authDomain: "zedo-6f33b.firebaseapp.com",
@@ -14,8 +14,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 2. YOUR NEW GEMINI KEY (REPLACE THIS STRING)
-const ZEDO_AI_KEY = "PASTE_YOUR_NEW_REVOKED_KEY_HERE"; 
+// 2. Gemini API Key (Integrated)
+const ZEDO_AI_KEY = "AIzaSyAyx-HliTT8iy0qjQzZ5rlCXU_7R8ZwnAo"; 
 
 // UI Elements
 const fileInput = document.getElementById('fileInput');
@@ -24,74 +24,68 @@ const sendBtn = document.getElementById('sendBtn');
 const userInput = document.getElementById('userInput');
 const chatDisplay = document.getElementById('chatDisplay');
 
-// --- FEATURE: IMPORT NOTES ---
+// FEATURE: Import Notes to Firebase
 fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    appendMessage('system', `Reading ${file.name}...`);
     const text = await file.text();
-    
     try {
         await addDoc(collection(db, "notes"), {
             name: file.name,
             content: text,
             timestamp: new Date()
         });
-        appendMessage('system', "Zedo has indexed your note. You can now ask questions about it!");
+        alert(`Zedo has imported: ${file.name}`);
         loadNotes();
     } catch (err) {
-        appendMessage('system', "Error saving note to Firebase.");
-        console.error(err);
+        console.error("Upload failed:", err);
     }
 });
 
-// --- FEATURE: LOAD KNOWLEDGE BASE ---
+// FEATURE: Display Knowledge Base
 async function loadNotes() {
     notesList.innerHTML = "";
     const q = query(collection(db, "notes"), orderBy("timestamp", "desc"));
     const snapshot = await getDocs(q);
     snapshot.forEach(doc => {
         const li = document.createElement('li');
-        li.innerHTML = `<strong>📄 ${doc.data().name}</strong>`;
+        li.style.padding = "10px";
+        li.style.borderBottom = "1px solid #333";
+        li.innerHTML = `📄 ${doc.data().name}`;
         notesList.appendChild(li);
     });
 }
 loadNotes();
 
-// --- FEATURE: AI CHAT (RAG LOGIC) ---
+// FEATURE: AI RAG Logic
 sendBtn.addEventListener('click', async () => {
     const question = userInput.value.trim();
     if (!question) return;
 
-    if (ZEDO_AI_KEY === "PASTE_YOUR_NEW_REVOKED_KEY_HERE") {
-        alert("Please update the ZEDO_AI_KEY in app.js with your new API key!");
-        return;
-    }
-
     appendMessage('user', question);
     userInput.value = "";
     
-    const typingIndicator = appendMessage('zedo', "Thinking...");
+    const typing = appendMessage('zedo', "Zedo is analyzing your notes...");
 
     try {
-        // Step 1: Get context from all your notes
+        // Step 1: Pull all notes for context
         const snapshot = await getDocs(collection(db, "notes"));
-        let context = snapshot.docs.map(doc => `File: ${doc.data().name}\nContent: ${doc.data().content}`).join("\n\n");
+        let context = snapshot.docs.map(doc => `Note: ${doc.data().name}\nContent: ${doc.data().content}`).join("\n\n");
 
-        // Step 2: Send to Gemini
+        // Step 2: Query Gemini 1.5 Flash
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${ZEDO_AI_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ 
                     parts: [{ 
-                        text: `You are Zedo, a helpful AI assistant. Answer the question based ONLY on the notes provided below. If the answer isn't in the notes, say "I don't have that information in my records."
+                        text: `You are Zedo. Use the provided notes to answer the question accurately.
                         
-                        NOTES:
+                        CONTEXT FROM NOTES:
                         ${context}
                         
-                        USER QUESTION:
+                        QUESTION:
                         ${question}` 
                     }] 
                 }]
@@ -99,26 +93,21 @@ sendBtn.addEventListener('click', async () => {
         });
 
         const data = await response.json();
-        typingIndicator.remove(); // Remove "Thinking..."
+        typing.remove();
 
-        if (data.candidates && data.candidates[0].content.parts[0].text) {
-            const aiText = data.candidates[0].content.parts[0].text;
-            appendMessage('zedo', aiText);
-        } else {
-            throw new Error("Invalid response from AI");
+        if (data.candidates) {
+            appendMessage('zedo', data.candidates[0].content.parts[0].text);
         }
-
     } catch (err) {
-        typingIndicator.remove();
-        appendMessage('zedo', "Sorry, I ran into an error connecting to my brain. Check your API key!");
+        typing.remove();
+        appendMessage('zedo', "Connection error. Please check your API usage limits.");
         console.error(err);
     }
 });
 
-// Helper: Add messages to UI
 function appendMessage(sender, text) {
     const div = document.createElement('div');
-    div.classList.add('message', sender);
+    div.className = `message ${sender}`;
     div.innerText = text;
     chatDisplay.appendChild(div);
     chatDisplay.scrollTop = chatDisplay.scrollHeight;
